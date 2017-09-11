@@ -8,6 +8,7 @@ fileTesting <- "testing.csv"
 data <- read.csv(fileTraining, na.strings=c("NA", "", "#DIV/0!"))
 
 ## Exploratory analysis
+
 # many columns include a mostly NAs
 unlist(lapply(1:160, function(i) {sum(is.na(data[, i]))}))
 # these columns are
@@ -25,7 +26,7 @@ data <- data %>%
   mutate(raw_timestamp = as.double(raw_timestamp_part_1 * 10^6 + raw_timestamp_part_2)) %>%
   select (-raw_timestamp_part_1, -raw_timestamp_part_2, -cvtd_timestamp)
 
-
+## Sampling
 
 library(caret)
 set.seed(1377)
@@ -34,3 +35,8 @@ inTrain <- createDataPartition(y = data$classe, p = 0.75, list = FALSE)
 training <- data[inTrain,]
 testing <- data[-inTrain,]
 
+# Let's see whether our random sample contain a fair amount of observations
+# of every user of every classe from original data
+options(digits=3)
+table(training$user_name, training$classe) /
+  table(data$user_name, data$classe)
