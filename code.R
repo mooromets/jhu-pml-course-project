@@ -25,7 +25,7 @@ har <- data %>%
   select(-unlist(lapply(1:160, function(i) 
               {if (sum(is.na(data[, i])) > dim(data)[1] * .95) i })),
          -new_window, -X, -raw_timestamp_part_1, -raw_timestamp_part_2, 
-         -cvtd_timestamp, -user_name)
+         -cvtd_timestamp, -user_name, -num_window)
 
 rm(data)
 
@@ -83,3 +83,24 @@ bagFit <- train(x = trainPC,
                 y = trainingStd$classe, 
                 method = "treebag")
 preds <- predict(bagFit, testPC)
+
+## random forest
+
+#modfit <- train(y = training$classe, x = training, method = "rf")
+inSmallTrain <- createDataPartition(y = training$classe, p = 0.3, list = FALSE)
+smallTraining <- training[inSmallTrain,]
+
+rfSmallFit <- randomForest(smallTraining[,-53], smallTraining$classe)
+x <- varImp(rfSmallFit)
+x[order(x[,1], decreasing = TRUE),]
+mostImp <- head(rownames(x)[order(x[,1], decreasing = TRUE)], 10)
+
+impTrain <- training[, c(mostImp, "classe")]
+rfFullFit <- randomForest(impTrain, impTrain$classe)
+predTrain <- predict(rfFullFit, testing, type = "class")
+
+(tab <- table(testing$classe, predTrain))
+#Accuracy:
+sum(diag(treeTab)) / sum (treeTab)
+
+rfFullFit$confusion[,1:5]

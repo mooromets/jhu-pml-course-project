@@ -1,3 +1,8 @@
+#########
+tmp <- data %>% filter(new_window == "yes")
+plot(tmp$classe, tmp$avg_yaw_forearm)
+
+
 ## GLM 
 # can be used for only 2 classes outome
 # use multinom instead 
