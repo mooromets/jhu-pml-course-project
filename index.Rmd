@@ -1,0 +1,48 @@
+---
+title: "HAR Course Project"
+author: "Sergey Sambor"
+date: "September 11, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r}
+urlTraining <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+urlTesting <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+fileTraining <- "training.csv"
+fileTesting <- "testing.csv"
+if (!file.exists(fileTraining))
+  download.file(url = urlTraining, fileTraining)
+if (!file.exists(fileTesting))
+  download.file(url = urlTesting, fileTesting)
+data <- read.csv(fileTraining, na.strings=c("NA", "", "#DIV/0!"))
+```
+## Exploratory analysis  
+many columns include a mostly NAs
+```{r}
+unlist(lapply(1:160, function(i) {sum(is.na(data[, i]))}))
+```
+these columns are
+```{r}
+mostlyNA <- unlist(lapply(1:160, function(i) {
+  if (sum(is.na(data[, i])) > dim(data)[1] * .95) i 
+  }))
+(colnames(data)[mostlyNA])
+```
+these variables are explained by a variable new_window, which are 'yes' for the rows that contain not-NA values in these columns. With the names min, max, avg, var, stddev etc. It's obvious that these variables are summarising ones. Therefore, we remove these variables and new_window variable itself.  
+We also remove timestamp variable as it obviously don't contribute to outcome as well as X variable is a simple row number we eliminate variable user_name as we don't want it as a one of regressors.  
+
+non-NA cols
+```{r}
+(colnames(data)[-mostlyNA])
+```
+.
+```{r}
+library(dplyr)
+har <- data %>%
+  select(-mostlyNA, -new_window, -X, -raw_timestamp_part_1, -raw_timestamp_part_2, 
+         -cvtd_timestamp, -user_name)
+```
