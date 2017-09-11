@@ -19,10 +19,13 @@ colnames(data)[unlist(lapply(1:160, function(i) {if (sum(is.na(data[, i])) > dim
 # variables and new_window variable itself
 # we also remove timestamp variable as it obviously don't contribute to outcome as well
 # as X variable is a simple row number
+# we eliminate variable user_name as we don't want it as a one of regressors
 library(dplyr)
 har <- data %>%
-  select(-unlist(lapply(1:160, function(i) {if (sum(is.na(data[, i])) > dim(data)[1] * .95) i })),
-         -new_window, -X, -raw_timestamp_part_1, -raw_timestamp_part_2, -cvtd_timestamp)
+  select(-unlist(lapply(1:160, function(i) 
+              {if (sum(is.na(data[, i])) > dim(data)[1] * .95) i })),
+         -new_window, -X, -raw_timestamp_part_1, -raw_timestamp_part_2, 
+         -cvtd_timestamp, -user_name)
 
 rm(data)
 
@@ -35,8 +38,48 @@ inTrain <- createDataPartition(y = har$classe, p = 0.75, list = FALSE)
 training <- har[inTrain,]
 testing <- har[-inTrain,]
 
+rm(har)
+
 # Let's see whether our random sample contain a fair amount of observations
 # of every user of every classe from original data
 options(digits=3)
 table(training$user_name, training$classe) /
   table(har$user_name, har$classe)
+
+## Trees
+treeFit <- train(classe ~ ., method = "rpart", data = training)
+preds <- predict(treeFit, newdata = testing)
+
+(treeTab <- table(testing$classe, preds))
+#Accuracy:
+sum(diag(treeTab)) / sum (treeTab)
+
+## Preprocessing
+goStandard <- function (x) {
+  for (i in 1:53)
+    x[, i] <- (x[, i] - mean(training[, i])) / sd(training[, i])
+  x
+}
+trainingStd <- goStandard(training)
+testingStd <- goStandard(testing)
+
+preProc <- preProcess(trainingStd[,-54], method = "pca", thresh = 0.8)
+trainPC <- predict(preProc, trainingStd[,-54])
+testPC <- predict(preProc, testingStd[,-54])
+  
+treePCAFit <- train(x = trainPC,
+                y = trainingStd$classe,
+                method = "rpart")
+predsPCA <- predict(treePCAFit, testPC)
+
+(treePCATab <- table(testing$classe, predsPCA))
+#Accuracy:
+sum(diag(treePCATab)) / sum (treePCATab)
+
+
+## Bagging
+require(e1071)
+bagFit <- train(x = trainPC, 
+                y = trainingStd$classe, 
+                method = "treebag")
+preds <- predict(bagFit, testPC)
