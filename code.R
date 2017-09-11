@@ -16,27 +16,27 @@ colnames(data)[unlist(lapply(1:160, function(i) {if (sum(is.na(data[, i])) > dim
 # these variables are explained by a variable new_window, which are 'yes' for the rows that
 # contain not-NA values in these columns. With the names min, max, avg, var, stddev etc. 
 # it's obvious that these variables are summarising ones. Therefore, we remove these
-# variables, rows where new_window is 'yes' and new_window variable itself
+# variables and new_window variable itself
+# we also remove timestamp variable as it obviously don't contribute to outcome as well
+# as X variable is a simple row number
 library(dplyr)
-data <- data %>%
-  filter(new_window == "no") %>%
+har <- data %>%
   select(-unlist(lapply(1:160, function(i) {if (sum(is.na(data[, i])) > dim(data)[1] * .95) i })),
-         -new_window) %>%
-  # replace three columns for datetime with a single one (numeric)
-  mutate(raw_timestamp = as.double(raw_timestamp_part_1 * 10^6 + raw_timestamp_part_2)) %>%
-  select (-raw_timestamp_part_1, -raw_timestamp_part_2, -cvtd_timestamp)
+         -new_window, -X, -raw_timestamp_part_1, -raw_timestamp_part_2, -cvtd_timestamp)
+
+rm(data)
 
 ## Sampling
 
 library(caret)
 set.seed(1377)
-inTrain <- createDataPartition(y = data$classe, p = 0.75, list = FALSE)
+inTrain <- createDataPartition(y = har$classe, p = 0.75, list = FALSE)
 
-training <- data[inTrain,]
-testing <- data[-inTrain,]
+training <- har[inTrain,]
+testing <- har[-inTrain,]
 
 # Let's see whether our random sample contain a fair amount of observations
 # of every user of every classe from original data
 options(digits=3)
 table(training$user_name, training$classe) /
-  table(data$user_name, data$classe)
+  table(har$user_name, har$classe)
