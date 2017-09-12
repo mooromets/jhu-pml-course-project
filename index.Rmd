@@ -102,5 +102,6 @@ predTest <- predict(rfFullFit, newdata = testing[, c(mostImp, "classe")])
 (tab <- table(testing$classe, predTest))
 ```
 Accuracy: `r sum(diag(tab)) / sum (tab)`  
+
 ## Summary
 Model built on random forest has high accuracy, expected to be  `r sum(diag(tab)) / sum (tab) * 100`%. For reaching thet level of accuracy 12 covarians were used: `r mostImp`. With that number of covariants took not too long, not longer than "rpart" with all covariates included.
