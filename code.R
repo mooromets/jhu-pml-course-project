@@ -89,18 +89,17 @@ preds <- predict(bagFit, testPC)
 #modfit <- train(y = training$classe, x = training, method = "rf")
 inSmallTrain <- createDataPartition(y = training$classe, p = 0.3, list = FALSE)
 smallTraining <- training[inSmallTrain,]
-
 rfSmallFit <- randomForest(smallTraining[,-53], smallTraining$classe)
 x <- varImp(rfSmallFit)
 x[order(x[,1], decreasing = TRUE),]
 mostImp <- head(rownames(x)[order(x[,1], decreasing = TRUE)], 10)
 
 impTrain <- training[, c(mostImp, "classe")]
-rfFullFit <- randomForest(impTrain, impTrain$classe)
-predTrain <- predict(rfFullFit, testing, type = "class")
+rfFullFit <- randomForest(classe ~ ., data = impTrain)
+predTrain <- predict(rfFullFit, newdata = testing[, c(mostImp, "classe")])
 
 (tab <- table(testing$classe, predTrain))
 #Accuracy:
-sum(diag(treeTab)) / sum (treeTab)
+sum(diag(tab)) / sum (tab)
 
 rfFullFit$confusion[,1:5]
